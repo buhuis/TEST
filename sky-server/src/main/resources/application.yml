@@ -37,3 +37,10 @@ sky:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+  alioss:
+    # 阿里云OSS地域节点（请按自己OSS所在区域修改）
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    # AccessKey 从系统环境变量读取，不硬编码在配置文件中
+    access-key-id: ${OSS_ACCESS_KEY_ID}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET}
+    bucket-name: bhuis

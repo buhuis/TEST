@@ -4,3 +4,5 @@
 *.class
 *Test.java
 **/test/
+# WorkBuddy 本地工作数据
+.workbuddy/
