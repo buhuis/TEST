@@ -37,6 +37,17 @@ sky:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+    # 设置用户端jwt签名加密时使用的秘钥
+    user-secret-key: itheima
+    # 设置用户端jwt过期时间
+    user-ttl: 7200000
+    # 设置用户端前端传递过来的令牌名称
+    user-token-name: authentication
+  wechat:
+    # 小程序的appid（微信登录用）
+    appid: wxf51bed5d2f282fcb
+    # 小程序的秘钥
+    secret: YOUR_WECHAT_SECRET
   alioss:
     # 阿里云OSS地域节点（请按自己OSS所在区域修改）
     endpoint: oss-cn-beijing.aliyuncs.com
