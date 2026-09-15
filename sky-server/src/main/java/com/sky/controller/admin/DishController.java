@@ -6,6 +6,7 @@ import com.sky.entity.Dish;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
+import com.sky.utils.RedisUtil;
 import com.sky.vo.DishVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -35,6 +36,20 @@ public class DishController {
     @Autowired
     private DishService dishService;
 
+    @Autowired
+    private RedisUtil redisUtil;
+
+    /**
+     * 清理菜品缓存（pattern 如 "dish_*"）
+     * 菜品数据发生增删改时，C 端浏览缓存需要同步失效
+     *
+     * @param pattern 缓存key匹配模式
+     */
+    private void cleanCache(String pattern) {
+        long count = redisUtil.deleteByPattern(pattern);
+        log.info("清理菜品缓存：{}，共删除 {} 个key", pattern, count);
+    }
+
     /**
      * 新增菜品
      *
@@ -46,6 +61,9 @@ public class DishController {
     public Result save(@RequestBody DishDTO dishDTO) {
         log.info("新增菜品：{}", dishDTO);
         dishService.saveWithFlavor(dishDTO);
+
+        //清理全部菜品缓存数据
+        cleanCache("dish_*");
         return Result.success();
     }
 
@@ -74,6 +92,9 @@ public class DishController {
     public Result delete(@RequestParam List<Long> ids) {
         log.info("批量删除菜品：{}", ids);
         dishService.deleteBatch(ids);
+
+        //清理全部菜品缓存数据
+        cleanCache("dish_*");
         return Result.success();
     }
 
@@ -102,6 +123,9 @@ public class DishController {
     public Result update(@RequestBody DishDTO dishDTO) {
         log.info("修改菜品：{}", dishDTO);
         dishService.updateWithFlavor(dishDTO);
+
+        //清理全部菜品缓存数据（修改可能改了分类，无法精确定位key，统一全删）
+        cleanCache("dish_*");
         return Result.success();
     }
 
@@ -117,6 +141,9 @@ public class DishController {
     public Result startOrStop(@PathVariable Integer status, @RequestParam Long id) {
         log.info("起售停售菜品：{}, {}", status, id);
         dishService.startOrStop(status, id);
+
+        //清理全部菜品缓存数据（起售/停售直接影响C端可见性）
+        cleanCache("dish_*");
         return Result.success();
     }
 

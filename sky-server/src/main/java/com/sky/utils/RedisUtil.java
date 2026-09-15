@@ -67,6 +67,21 @@ public class RedisUtil {
     }
 
     /**
+     * 按模式批量删除缓存（如 "dish_*" 清理所有菜品缓存）
+     *
+     * @param pattern 匹配模式
+     * @return 删除的key数量
+     */
+    public long deleteByPattern(String pattern) {
+        java.util.Set<String> keys = redisTemplate.keys(pattern);
+        if (keys == null || keys.isEmpty()) {
+            return 0L;
+        }
+        Long count = redisTemplate.delete(keys);
+        return count == null ? 0L : count;
+    }
+
+    /**
      * 指定缓存过期时间
      */
     public boolean expire(String key, long timeout, TimeUnit unit) {

@@ -7,29 +7,40 @@ import com.sky.service.SetmealService;
 import com.sky.vo.DishItemVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 
 @RestController("userSetmealController")
 @RequestMapping("/user/setmeal")
+@Slf4j
 @Api(tags = "C端-套餐浏览接口")
 public class SetmealController {
     @Autowired
     private SetmealService setmealService;
 
     /**
-     * 条件查询
+     * 条件查询（Spring Cache 声明式缓存）
+     * cacheNames = "setmealCache"：缓存名，Redis 中 key 前缀为 setmealCache::
+     * key = "#categoryId"：以分类id作为缓存key，Redis 中完整 key 如 setmealCache::16
+     * 命中缓存直接返回，未命中执行方法并自动回填（TTL 1 小时，见 RedisConfiguration）
+     * condition 限定仅查询"起售中"的数据时才走缓存
      *
-     * @param categoryId
+     * @param categoryId 分类id
      * @return
      */
     @GetMapping("/list")
     @ApiOperation("根据分类id查询套餐")
+    @Cacheable(cacheNames = "setmealCache", key = "#categoryId")
     public Result<List<Setmeal>> list(Long categoryId) {
+        //未命中缓存才会进入方法体，查询数据库，手动指定查询起售中的套餐
+        log.info("缓存未命中，查询数据库：categoryId={}", categoryId);
         Setmeal setmeal = new Setmeal();
         setmeal.setCategoryId(categoryId);
         setmeal.setStatus(StatusConstant.ENABLE);
