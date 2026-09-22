@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Map;
+
 @Mapper
 public interface UserMapper {
 
@@ -25,5 +27,20 @@ public interface UserMapper {
     @Insert("insert into user (openid, name, phone, sex, id_number, avatar, create_time) " +
             "values (#{openid}, #{name}, #{phone}, #{sex}, #{idNumber}, #{avatar}, #{createTime})")
     void insert(User user);
+
+    /**
+     * 根据动态条件统计用户数量（begin/end 按注册时间过滤，新增用户统计用）
+     *
+     * @param map begin、end
+     * @return
+     */
+    @Select("<script>" +
+            "select count(id) from user " +
+            "<where>" +
+            "<if test='begin != null'> and create_time &gt; #{begin} </if>" +
+            "<if test='end != null'> and create_time &lt; #{end} </if>" +
+            "</where>" +
+            "</script>")
+    Integer countByMap(Map map);
 
 }

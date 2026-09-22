@@ -13,6 +13,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface DishMapper {
@@ -114,5 +115,18 @@ public interface DishMapper {
      */
     @Select("select d.* from dish d left join setmeal_dish sd on d.id = sd.dish_id where sd.setmeal_id = #{setmealId}")
     List<Dish> getBySetmealId(Long setmealId);
+
+    /**
+     * 根据状态统计菜品数量（工作台菜品总览用）
+     * @param map status
+     * @return
+     */
+    @Select("<script>" +
+            "select count(id) from dish " +
+            "<where>" +
+            "<if test='status != null'> and status = #{status} </if>" +
+            "</where>" +
+            "</script>")
+    Integer countByMap(Map map);
 
 }

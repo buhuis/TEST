@@ -14,6 +14,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface SetmealMapper {
@@ -111,5 +112,18 @@ public interface SetmealMapper {
             "from setmeal_dish sd left join dish d on sd.dish_id = d.id " +
             "where sd.setmeal_id = #{setmealId}")
     List<DishItemVO> getDishItemBySetmealId(Long setmealId);
+
+    /**
+     * 根据状态统计套餐数量（工作台套餐总览用）
+     * @param map status
+     * @return
+     */
+    @Select("<script>" +
+            "select count(id) from setmeal " +
+            "<where>" +
+            "<if test='status != null'> and status = #{status} </if>" +
+            "</where>" +
+            "</script>")
+    Integer countByMap(Map map);
 
 }
