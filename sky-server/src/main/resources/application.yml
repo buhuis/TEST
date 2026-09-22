@@ -44,10 +44,10 @@ sky:
     # 设置用户端前端传递过来的令牌名称
     user-token-name: authentication
   wechat:
-    # 小程序的appid（微信登录用）
-    appid: wxf51bed5d2f282fcb
-    # 小程序的秘钥
-    secret: YOUR_WECHAT_SECRET
+    # 小程序的appid（微信登录用）——真实值在 application-dev.yml（不入库），此处留占位
+    appid: ${sky.wechat.appid:}
+    # 小程序的秘钥——敏感信息不入库
+    secret: ${sky.wechat.secret:}
   alioss:
     # 阿里云OSS地域节点（请按自己OSS所在区域修改）
     endpoint: oss-cn-beijing.aliyuncs.com
