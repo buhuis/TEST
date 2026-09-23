@@ -8,3 +8,4 @@
 .workbuddy/
 # 本地环境配置（含数据库/Redis 密码等敏感信息，不入库）
 **/application-dev.yml
+:)
