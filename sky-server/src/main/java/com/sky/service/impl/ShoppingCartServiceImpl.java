@@ -1,10 +1,12 @@
 package com.sky.service.impl;
 
+import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.ShoppingCartDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.entity.ShoppingCart;
+import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.mapper.ShoppingCartMapper;
@@ -56,19 +58,30 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         }
 
         //4. 不存在则新增：判断本次添加的是菜品还是套餐，分别查询商品信息补全名称、图片、单价
+        //注意：dishId / setmealId 可能被前端漏传或传了已被删除的 id，直接取属性会 NPE，必须逐层校验
         Long dishId = shoppingCartDTO.getDishId();
+        Long setmealId = shoppingCartDTO.getSetmealId();
         if (dishId != null) {
             //本次添加的是菜品
             Dish dish = dishMapper.getById(dishId);
+            if (dish == null) {
+                throw new ShoppingCartBusinessException(MessageConstant.GOODS_NOT_FOUND);
+            }
             shoppingCart.setName(dish.getName());
             shoppingCart.setImage(dish.getImage());
             shoppingCart.setAmount(dish.getPrice());
-        } else {
+        } else if (setmealId != null) {
             //本次添加的是套餐
-            Setmeal setmeal = setmealMapper.getById(shoppingCartDTO.getSetmealId());
+            Setmeal setmeal = setmealMapper.getById(setmealId);
+            if (setmeal == null) {
+                throw new ShoppingCartBusinessException(MessageConstant.GOODS_NOT_FOUND);
+            }
             shoppingCart.setName(setmeal.getName());
             shoppingCart.setImage(setmeal.getImage());
             shoppingCart.setAmount(setmeal.getPrice());
+        } else {
+            //既没有菜品id也没有套餐id，非法请求
+            throw new ShoppingCartBusinessException(MessageConstant.GOODS_NOT_FOUND);
         }
         shoppingCart.setNumber(1);
         shoppingCart.setCreateTime(LocalDateTime.now());

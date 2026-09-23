@@ -99,6 +99,17 @@
         </where>
     </select>
 
+    <select id="getDailyBusinessData" resultType="java.util.Map">
+        select date_format(order_time, '%Y-%m-%d')     orderDate,
+               count(id)                               orderCount,
+               sum(case when status = 5 then 1 else 0 end)    validOrderCount,
+               coalesce(sum(case when status = 5 then amount else 0 end), 0) turnover
+        from orders
+        where order_time &gt;= #{begin}
+          and order_time &lt;= #{end}
+        group by date_format(order_time, '%Y-%m-%d')
+    </select>
+
     <select id="getSalesTop10" resultType="com.sky.dto.GoodsSalesDTO">
         select od.name, sum(od.number) number
         from order_detail od, orders o

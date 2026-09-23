@@ -36,16 +36,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+
+    /**
+     * 固定配送费（元）：与小程序端下单金额的计算口径保持一致
+     */
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("6");
 
     @Autowired
     private OrderMapper orderMapper;
@@ -96,11 +104,26 @@ public class OrderServiceImpl implements OrderService {
         //3. 向订单表插入 1 条数据
         Orders orders = new Orders();
         //Orders 的 packAmount/tablewareNumber 是基本类型 int，DTO 里是包装类型，复制时排除避免 null 拆箱失败
-        BeanUtils.copyProperties(ordersSubmitDTO, orders, "packAmount", "tablewareNumber");
+        //amount 一并排除：订单金额必须由服务端重新计算，绝不能直接使用前端传值（防止金额篡改）
+        BeanUtils.copyProperties(ordersSubmitDTO, orders, "packAmount", "tablewareNumber", "amount");
         orders.setPackAmount(ordersSubmitDTO.getPackAmount() == null ? 0 : ordersSubmitDTO.getPackAmount());
         orders.setTablewareNumber(ordersSubmitDTO.getTablewareNumber() == null ? 0 : ordersSubmitDTO.getTablewareNumber());
 
-        orders.setNumber(String.valueOf(System.currentTimeMillis())); //订单号，用时间戳保证唯一
+        //3.1 服务端重新计算订单金额（口径与小程序端保持一致）：商品小计 + 打包费 + 配送费
+        //    前端传入的 amount 一律忽略，只作为展示；这里是唯一被信任的金额来源
+        BigDecimal goodsAmount = BigDecimal.ZERO;
+        for (ShoppingCart cart : shoppingCartList) {
+            BigDecimal price = cart.getAmount() == null ? BigDecimal.ZERO : cart.getAmount();
+            int number = cart.getNumber() == null ? 0 : cart.getNumber();
+            goodsAmount = goodsAmount.add(price.multiply(BigDecimal.valueOf(number)));
+        }
+        //打包费：packAmount 由前端按菜品总份数传入，1元/份；配送费为固定值，与小程序端保持一致
+        BigDecimal amount = goodsAmount
+                .add(BigDecimal.valueOf(orders.getPackAmount()))
+                .add(DELIVERY_FEE);
+        orders.setAmount(amount.setScale(2, RoundingMode.HALF_UP));
+
+        orders.setNumber(generateOrderNumber()); //订单号：时间戳+随机数，并查重防止并发重复
         orders.setOrderTime(LocalDateTime.now());
         orders.setPayStatus(Orders.UN_PAID);           //未支付
         orders.setStatus(Orders.PENDING_PAYMENT);      //待付款
@@ -492,6 +515,21 @@ public class OrderServiceImpl implements OrderService {
                 .deliveryTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders);
+    }
+
+    /**
+     * 生成订单号：时间戳（毫秒）+ 4位随机数
+     * 单纯用时间戳在同一毫秒内并发下单会生成相同订单号，追加随机数后再查重，彻底避免重复
+     *
+     * @return 唯一订单号
+     */
+    private String generateOrderNumber() {
+        String number;
+        do {
+            number = System.currentTimeMillis()
+                    + String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
+        } while (orderMapper.countByNumber(number) > 0);
+        return number;
     }
 
 }

@@ -5,6 +5,7 @@ import com.sky.dto.GoodsSalesDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,24 @@ public interface OrderMapper {
      */
     @Select("select * from orders where number = #{orderNumber} and user_id = #{userId}")
     Orders getByNumberAndUserId(String orderNumber, Long userId);
+
+    /**
+     * 根据订单号查询订单
+     *
+     * @param number
+     * @return
+     */
+    @Select("select * from orders where number = #{number}")
+    Orders getByNumber(String number);
+
+    /**
+     * 根据订单号统计订单数量（生成订单号时查重，避免重复）
+     *
+     * @param number
+     * @return
+     */
+    @Select("select count(id) from orders where number = #{number}")
+    Integer countByNumber(String number);
 
     /**
      * 根据id查询订单
@@ -70,6 +89,17 @@ public interface OrderMapper {
      * @return
      */
     Integer countByMap(Map map);
+
+    /**
+     * 按日期分组统计营业数据（订单总数/有效订单数/营业额）
+     * 一次查询覆盖整个区间，替代「按天循环查询」，避免 30 天区间产生上百次 SQL
+     *
+     * @param begin 区间开始
+     * @param end   区间结束
+     * @return 每行包含 orderDate、orderCount、validOrderCount、turnover
+     */
+    List<Map<String, Object>> getDailyBusinessData(@Param("begin") LocalDateTime begin,
+                                                   @Param("end") LocalDateTime end);
 
     /**
      * 统计指定时间区间内的销量排名前10（菜品/套餐按名称聚合）

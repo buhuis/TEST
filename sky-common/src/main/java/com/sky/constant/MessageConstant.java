@@ -24,5 +24,7 @@ public class MessageConstant {
     public static final String ORDER_STATUS_ERROR = "订单状态错误";
     public static final String ORDER_NOT_FOUND = "订单不存在";
     public static final String ALREADY_EXISTS = "已存在";
+    public static final String GOODS_NOT_FOUND = "商品不存在或已下架，不能加入购物车";
+    public static final String ADDRESS_BOOK_NOT_FOUND = "地址不存在或无权操作";
 
 }

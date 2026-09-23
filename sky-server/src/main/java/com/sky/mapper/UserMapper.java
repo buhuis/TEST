@@ -3,8 +3,11 @@ package com.sky.mapper;
 import com.sky.entity.User;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Mapper
@@ -42,5 +45,19 @@ public interface UserMapper {
             "</where>" +
             "</script>")
     Integer countByMap(Map map);
+
+    /**
+     * 按注册日期分组统计新增用户数
+     * 一次查询覆盖整个区间，替代「按天循环查询」，用于用户统计报表
+     *
+     * @param begin 区间开始
+     * @param end   区间结束
+     * @return 每行包含 orderDate、newUsers
+     */
+    @Select("select date_format(create_time, '%Y-%m-%d') orderDate, count(id) newUsers from user " +
+            "where create_time &gt;= #{begin} and create_time &lt;= #{end} " +
+            "group by date_format(create_time, '%Y-%m-%d')")
+    List<Map<String, Object>> countNewUserByDate(@Param("begin") LocalDateTime begin,
+                                                 @Param("end") LocalDateTime end);
 
 }

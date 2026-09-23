@@ -1,5 +1,6 @@
 package com.sky.websocket;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * type=1 来单提醒（支付成功后推送）  type=2 客户催单
  */
 @Component
+@Slf4j
 @ServerEndpoint("/ws/{sid}")
 public class WebSocketServer {
 
@@ -29,7 +31,7 @@ public class WebSocketServer {
      */
     @OnOpen
     public void onOpen(Session session, @PathParam("sid") String sid) {
-        System.out.println("客户端：" + sid + "建立连接");
+        log.info("客户端：{} 建立连接", sid);
         sessionMap.put(sid, session);
     }
 
@@ -40,7 +42,7 @@ public class WebSocketServer {
      */
     @OnMessage
     public void onMessage(String message, @PathParam("sid") String sid) {
-        System.out.println("收到来自客户端：" + sid + "的信息:" + message);
+        log.info("收到来自客户端：{} 的信息：{}", sid, message);
     }
 
     /**
@@ -50,7 +52,7 @@ public class WebSocketServer {
      */
     @OnClose
     public void onClose(@PathParam("sid") String sid) {
-        System.out.println("连接断开:" + sid);
+        log.info("连接断开：{}", sid);
         sessionMap.remove(sid);
     }
 
@@ -66,7 +68,8 @@ public class WebSocketServer {
                 //服务器向客户端发送消息
                 session.getBasicRemote().sendText(message);
             } catch (Exception e) {
-                e.printStackTrace();
+                //单个会话发送失败不影响其他客户端，记录日志即可
+                log.error("WebSocket 消息发送失败：{}", e.getMessage());
             }
         }
     }
